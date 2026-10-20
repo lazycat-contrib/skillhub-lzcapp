@@ -1,5 +1,5 @@
 package: community.lazycat.app.skillhub
-version: 0.2.6
+version: 0.2.23
 name: SkillHub
 description: "Self-hosted, open-source agent skill registry: publish & version skill packages, govern with RBAC and audit logs"
 min_os_version: 1.5.0

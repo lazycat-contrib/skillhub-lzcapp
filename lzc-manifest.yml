@@ -7,11 +7,10 @@ application:
   upstreams:
     - location: /
       backend: http://web:80/
-
 services:
   skill-scanner:
-    # upstream: ghcr.io/iflytek/skillhub-scanner:v0.2.6
-    image: ghcr.nju.edu.cn/iflytek/skillhub-scanner:v0.2.6@sha256:cf0ae126c626fe642a2061692b7deecef48d06c589ec2c32051ac3919f4f8f24
+    # upstream: ghcr.io/iflytek/skillhub-scanner:v0.2.23
+    image: ghcr.nju.edu.cn/iflytek/skillhub-scanner:v0.2.23
     environment:
       - TZ=Asia/Shanghai
       - SKILL_SCANNER_LLM_API_KEY={{ .U.scanner_llm_api_key }}
@@ -27,7 +26,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
   postgres:
     # upstream: postgres:16-alpine
     image: docker.1ms.run/library/postgres:16-alpine
@@ -45,7 +43,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
   redis:
     # upstream: redis:7-alpine
     image: docker.1ms.run/library/redis:7-alpine
@@ -62,10 +59,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
   server:
-    # upstream: ghcr.io/iflytek/skillhub-server:v0.2.6
-    image: ghcr.nju.edu.cn/iflytek/skillhub-server:v0.2.6@sha256:e68acbb2491453906f0a06153e2e13095caebc8e81c13cd52cb3034698fc0113
+    # upstream: ghcr.io/iflytek/skillhub-server:v0.2.23
+    image: ghcr.nju.edu.cn/iflytek/skillhub-server:v0.2.23
     depends_on:
       - postgres
       - redis
@@ -108,10 +104,9 @@ services:
       timeout: 5s
       retries: 12
       start_period: 60s
-
   web:
-    # upstream: ghcr.io/iflytek/skillhub-web:v0.2.6
-    image: ghcr.nju.edu.cn/iflytek/skillhub-web:v0.2.6@sha256:b9bee58b907a5c8049affdc9a61314850647709eded971fd634da6e4d8ce3bb0
+    # upstream: ghcr.io/iflytek/skillhub-web:v0.2.23
+    image: ghcr.nju.edu.cn/iflytek/skillhub-web:v0.2.23
     depends_on:
       - server
     environment:
