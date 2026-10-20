@@ -1,0 +1,59 @@
+version: 1
+
+project:
+  root: .
+  build_config: lzc-build.yml
+  package_file: package.yml
+  output: dist/skillhub.lpk
+  target_arch: amd64
+
+update:
+  strategy: publish
+  allow_downgrade: false
+  version_source:
+    type: image
+    image: server
+
+build:
+  run_buildscript: false
+
+images:
+  - id: server
+    target: service
+    service: server
+    source: ghcr.io/iflytek/skillhub-server
+    channel: stable
+    sort: semver
+    tag_regex: '^v?\d+\.\d+\.\d+$'
+    delivery:
+      mode: mirror
+      require_digest_match: true
+  - id: web
+    target: service
+    service: web
+    source: ghcr.io/iflytek/skillhub-web
+    channel: stable
+    sort: semver
+    tag_regex: '^v?\d+\.\d+\.\d+$'
+    delivery:
+      mode: mirror
+      require_digest_match: true
+  - id: scanner
+    target: service
+    service: skill-scanner
+    source: ghcr.io/iflytek/skillhub-scanner
+    channel: stable
+    sort: semver
+    tag_regex: '^v?\d+\.\d+\.\d+$'
+    delivery:
+      mode: mirror
+      require_digest_match: true
+
+stores:
+  official:
+    enabled: false
+  private:
+    enabled: true
+    skip_if_version_exists: true
+    name: SkillHub
+    summary: "自托管 Agent 技能注册中心"

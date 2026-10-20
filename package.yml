@@ -1,0 +1,15 @@
+package: community.lazycat.app.skillhub
+version: 0.2.6
+name: SkillHub
+description: "Self-hosted, open-source agent skill registry: publish & version skill packages, govern with RBAC and audit logs"
+min_os_version: 1.5.0
+author: iflytek
+license: Apache-2.0
+homepage: https://github.com/iflytek/skillhub
+locales:
+  zh:
+    name: "SkillHub"
+    description: "自托管 Agent 技能注册中心：技能包发布与版本管理、RBAC 权限治理、审计日志、安全扫描"
+  en:
+    name: "SkillHub"
+    description: "Self-hosted agent skill registry with versioning, RBAC and audit logs"

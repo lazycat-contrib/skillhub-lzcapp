@@ -1,0 +1,31 @@
+params:
+  - id: scanner_llm_api_key
+    type: secret
+    name: "Scanner LLM API Key"
+    description: "Optional: LLM API key for skill security scanning (empty = rule-based scan only)"
+    default_value: ""
+    optional: true
+  - id: scanner_llm_base_url
+    type: string
+    name: "Scanner LLM Base URL"
+    description: "OpenAI-compatible endpoint for the security scanner, e.g. https://api.deepseek.com"
+    default_value: ""
+    optional: true
+  - id: scanner_llm_model
+    type: string
+    name: "Scanner LLM Model"
+    description: "Model id for the security scanner"
+    default_value: ""
+    optional: true
+
+locales:
+  zh:
+    scanner_llm_api_key:
+      name: "扫描器 LLM API Key"
+      description: "可选：技能安全扫描所用 LLM 的 API Key（留空则仅规则扫描）"
+    scanner_llm_base_url:
+      name: "扫描器 LLM 端点"
+      description: "OpenAI 兼容端点（如 https://api.deepseek.com）"
+    scanner_llm_model:
+      name: "扫描器 LLM 模型"
+      description: "安全扫描所用模型 ID"

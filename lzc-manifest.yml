@@ -1,0 +1,130 @@
+application:
+  subdomain: skillhub
+  background_task: true
+  multi_instance: false
+  public_path:
+    - /
+  upstreams:
+    - location: /
+      backend: http://web:80/
+
+services:
+  skill-scanner:
+    # upstream: ghcr.io/iflytek/skillhub-scanner:v0.2.6
+    image: ghcr.nju.edu.cn/iflytek/skillhub-scanner:v0.2.6@sha256:cf0ae126c626fe642a2061692b7deecef48d06c589ec2c32051ac3919f4f8f24
+    environment:
+      - TZ=Asia/Shanghai
+      - SKILL_SCANNER_LLM_API_KEY={{ .U.scanner_llm_api_key }}
+      - SKILL_SCANNER_LLM_BASE_URL={{ .U.scanner_llm_base_url }}
+      - SKILL_SCANNER_LLM_MODEL={{ .U.scanner_llm_model }}
+      - SKILLHUB_SCANNER_MAX_CONCURRENT_SCANS=1
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    # upstream: postgres:16-alpine
+    image: docker.1ms.run/library/postgres:16-alpine
+    environment:
+      - TZ=Asia/Shanghai
+      - POSTGRES_DB=skillhub
+      - POSTGRES_USER=skillhub
+      - POSTGRES_PASSWORD={{ stable_secret "db_password" }}
+    binds:
+      - /lzcapp/var/skillhub/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U skillhub -d skillhub
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    # upstream: redis:7-alpine
+    image: docker.1ms.run/library/redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    environment:
+      - TZ=Asia/Shanghai
+    binds:
+      - /lzcapp/var/skillhub/redis:/data
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    # upstream: ghcr.io/iflytek/skillhub-server:v0.2.6
+    image: ghcr.nju.edu.cn/iflytek/skillhub-server:v0.2.6@sha256:e68acbb2491453906f0a06153e2e13095caebc8e81c13cd52cb3034698fc0113
+    depends_on:
+      - postgres
+      - redis
+      - skill-scanner
+    environment:
+      - TZ=Asia/Shanghai
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/skillhub
+      - SPRING_DATASOURCE_USERNAME=skillhub
+      - SPRING_DATASOURCE_PASSWORD={{ stable_secret "db_password" }}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SESSION_COOKIE_SECURE=false
+      - SKILLHUB_PUBLIC_BASE_URL=https://skillhub.{{ .S.Domain }}
+      - SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET={{ stable_secret "anon_cookie_secret" }}
+      # 单机部署：本地存储（S3/OSS 可后续在数据卷配置）
+      - SKILLHUB_STORAGE_PROVIDER=local
+      - STORAGE_BASE_PATH=/var/lib/skillhub/storage
+      - SKILLHUB_SECURITY_SCANNER_ENABLED=true
+      - SKILLHUB_SECURITY_SCANNER_URL=http://skill-scanner:8000
+      - SKILLHUB_SECURITY_SCANNER_MODE=upload
+      - SKILLHUB_BUILTIN_SKILLS_ENABLED=true
+      # 密码直登（OAuth2 需要外部 IdP，未启用）
+      - SKILLHUB_AUTH_DIRECT_ENABLED=true
+      - BOOTSTRAP_ADMIN_ENABLED=true
+      - BOOTSTRAP_ADMIN_USER_ID=docker-admin
+      - BOOTSTRAP_ADMIN_USERNAME=admin
+      - BOOTSTRAP_ADMIN_PASSWORD={{ stable_secret "admin_password" }}
+      - BOOTSTRAP_ADMIN_DISPLAY_NAME=Admin
+      - BOOTSTRAP_ADMIN_EMAIL=admin@skillhub.local
+    binds:
+      - /lzcapp/var/skillhub/storage:/var/lib/skillhub/storage
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:8080/actuator/health
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  web:
+    # upstream: ghcr.io/iflytek/skillhub-web:v0.2.6
+    image: ghcr.nju.edu.cn/iflytek/skillhub-web:v0.2.6@sha256:b9bee58b907a5c8049affdc9a61314850647709eded971fd634da6e4d8ce3bb0
+    depends_on:
+      - server
+    environment:
+      - SKILLHUB_API_UPSTREAM=http://server:8080
+      - SKILLHUB_TRUST_FORWARDED_PROTO=true
+      - SKILLHUB_PUBLIC_BASE_URL=https://skillhub.{{ .S.Domain }}
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -qO-
+        - http://127.0.0.1/nginx-health
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
